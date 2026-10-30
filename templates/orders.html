@@ -12,13 +12,14 @@
     <form class="orders-filters"
           hx-get="/orders/table"
           hx-target="#orders-table"
-          hx-trigger="load, submit, input changed delay:300ms, change, every 5s">
+          hx-trigger="load, submit, input changed delay:300ms, change, every 5s, orders-changed from:body">
         <input type="search" name="q" placeholder="Search placer / filler number, MRN, surname or test code...">
         <select name="status">
             <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="revoked">Revoked</option>
+            <option value="requested">Requested</option>
+            <option value="accepted">Accepted</option>
             <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
         </select>
     </form>
 

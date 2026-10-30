@@ -565,6 +565,12 @@ footer p {
     cursor: pointer;
 }
 
+.order-actions {
+    display: flex;
+    gap: 0.5rem;
+    cursor: default;
+}
+
 .muted {
     color: var(--text-secondary);
     font-size: 0.8rem;
@@ -583,7 +589,10 @@ footer p {
 }
 
 .status-active { background: #d1fae5; color: #065f46; }
-.status-revoked { background: #fee2e2; color: #991b1b; }
+.status-revoked,
+.status-cancelled { background: #fee2e2; color: #991b1b; }
+.status-requested { background: #fef3c7; color: #92400e; }
+.status-accepted { background: #d1fae5; color: #065f46; }
 .status-completed { background: #dbeafe; color: #1e40af; }
 .priority-stat { background: #fee2e2; color: #991b1b; }
 .priority-asap,

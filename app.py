@@ -641,13 +641,13 @@ def preview_format(format_id):
 HL7_MIMETYPE = 'x-application/hl7-v2+er7'
 
 
-def query_service_requests(db, status=None, q=None, patient=None):
-    """Fetch service requests with optional status, free-text and patient filters."""
+def query_service_requests(db, statuses=None, q=None, patient=None):
+    """Fetch service requests with optional workflow status, free-text and patient filters."""
     sql = 'SELECT * FROM service_requests WHERE 1=1'
     params = []
-    if status:
-        sql += ' AND status = ?'
-        params.append(status)
+    if statuses is not None:
+        sql += f" AND status IN ({','.join('?' * len(statuses)) or 'NULL'})"
+        params.extend(statuses)
     if patient:
         sql += ' AND patient_id = ?'
         params.append(patient)
@@ -682,11 +682,12 @@ def list_orders():
 def orders_table():
     """HTMX fragment: filtered service request table."""
     db = get_db()
+    status = request.args.get('status')
     rows = query_service_requests(db,
-                                  status=request.args.get('status') or None,
+                                  statuses=[status] if status else None,
                                   q=request.args.get('q', '').strip() or None)
     db.close()
-    return render_template('order_table.html', orders=rows)
+    return render_template('order_table.html', orders=rows, actions=order_entry.STATUS_ACTIONS)
 
 
 @app.route('/orders/<int:order_id>')
@@ -699,25 +700,30 @@ def order_detail(order_id):
         return "Service request not found", 404
     return render_template('order_detail.html',
                            order=row,
+                           actions=order_entry.STATUS_ACTIONS[row['status']],
                            fhir_json=order_entry.to_fhir_json(row),
                            raw_hl7=(row['raw_message'] or '').replace('\r', '\n'))
 
 
-@app.route('/orders/<int:order_id>/cancel', methods=['POST'])
-def cancel_order(order_id):
-    """Cancel an order by sending an ORC|CA message through the facade."""
+@app.route('/orders/<int:order_id>/status', methods=['POST'])
+def change_order_status(order_id):
+    """Accept, complete or cancel an order from the LIS side."""
     db = get_db()
-    row = get_service_request(db, order_id)
-    if not row:
+    if not get_service_request(db, order_id):
         db.close()
         return "Service request not found", 404
-    message = order_entry.build_orm(
-        {'id': row['patient_id'], 'family': row['patient_family'], 'given': row['patient_given'],
-         'dob': row['patient_dob'] or '', 'sex': row['patient_sex'] or ''},
-        row['test_code'], row['test_display'], row['placer_order_number'],
-        order_control='CA')
-    order_entry.process_message(db, message)
-    db.close()
+    try:
+        order_entry.change_status(db, order_id, request.form.get('status', ''))
+        db.commit()
+    except order_entry.OrderError as e:
+        db.rollback()
+        return str(e), 409
+    finally:
+        db.close()
+
+    if request.headers.get('HX-Request'):
+        # Table action: tell the viewer to refresh rather than navigate
+        return '', 204, {'HX-Trigger': 'orders-changed'}
     return redirect(f'/orders/{order_id}')
 
 
@@ -776,9 +782,15 @@ def fhir_service_request(order_id):
 @app.route('/fhir/ServiceRequest')
 def fhir_service_request_search():
     """FHIR search for ServiceRequests by status and patient identifier."""
+    # FHIR status values (comma separated) -> LIS workflow statuses
+    fhir_statuses = [s for s in request.args.get('status', '').split(',') if s]
+    statuses = None
+    if fhir_statuses:
+        statuses = [lis for lis, fhir in order_entry.FHIR_STATUS.items() if fhir in fhir_statuses]
+
     db = get_db()
     rows = query_service_requests(db,
-                                  status=request.args.get('status') or None,
+                                  statuses=statuses,
                                   patient=request.args.get('patient') or None)
     db.close()
     bundle = {

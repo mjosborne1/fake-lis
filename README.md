@@ -79,7 +79,7 @@ The web interface provides:
 The LIS accepts laboratory orders as HL7 v2 `ORM^O01` or `OML^O21` messages, parsed with the
 [`hl7`](https://python-hl7.readthedocs.io/) package. Each `OBR` becomes a service request.
 
-- `ORC-1` order control: `NW` creates an order; `CA`, `OC` and `DC` revoke one
+- `ORC-1` order control: `NW` creates an order; `CA`, `OC` and `DC` cancel one that is not yet completed
 - `ORC-2` / `OBR-2` placer order number (required); the LIS assigns a filler number
 - `OBR-4.1` test code must match a catalogue `Report_LOCAL_Code`, `Report_LOINC` or `Report_SCT`
 - Priority comes from `TQ1-9`, `OBR-27.6` or `ORC-7.6` (`S` stat, `A` asap, `R` routine)
@@ -111,7 +111,10 @@ Exits non-zero if any message is not accepted (`MSA|AA`), so it can be used in s
 
 **Viewer and FHIR:**
 - `/orders` lists service requests (live refresh, search, status filter), with a detail page showing the
-  FHIR ServiceRequest and the original HL7 message, plus a cancel button
+  FHIR ServiceRequest and the original HL7 message
+- Orders move through the LIS workflow from the table or detail page: `requested` → Accept → `accepted` →
+  Complete → `completed`, or Cancel from `requested` / `accepted` → `cancelled`. FHIR `ServiceRequest.status`
+  is `active` for requested and accepted orders, `completed`, or `revoked` for cancelled ones
 - `/orders/new` places an order from a form, or sends a pasted raw HL7 message, and shows the ACK
 - `GET /fhir/ServiceRequest/<id>` and `GET /fhir/ServiceRequest?status=&patient=` return FHIR R4 JSON
 

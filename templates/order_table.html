@@ -10,6 +10,7 @@
             <th>Priority</th>
             <th>Status</th>
             <th>Requester</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -24,6 +25,17 @@
             <td><span class="badge priority-{{ order['priority'] }}">{{ order['priority'] }}</span></td>
             <td><span class="badge status-{{ order['status'] }}">{{ order['status'] }}</span></td>
             <td>{{ order['requester'] or '-' }}</td>
+            <td class="order-actions" onclick="event.stopPropagation()">
+                {% for status, label in actions[order['status']] %}
+                <button class="btn btn-sm {{ 'btn-danger' if status == 'cancelled' else 'btn-primary' }}"
+                        hx-post="/orders/{{ order['id'] }}/status"
+                        hx-vals='{"status": "{{ status }}"}'
+                        hx-swap="none"
+                        {% if status == 'cancelled' %}hx-confirm="Cancel order {{ order['placer_order_number'] }}?"{% endif %}>
+                    {{ label }}
+                </button>
+                {% endfor %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>

@@ -44,11 +44,18 @@
                 <dt>Received</dt><dd>{{ order['received_at'] }}</dd>
                 <dt>Updated</dt><dd>{{ order['updated_at'] }}</dd>
             </dl>
-            {% if order['status'] == 'active' %}
-            <form method="POST" action="/orders/{{ order['id'] }}/cancel">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Cancel this order?')">Cancel order (ORC|CA)</button>
-            </form>
-            {% endif %}
+            <div class="order-actions">
+                {% for status, label in actions %}
+                <form method="POST" action="/orders/{{ order['id'] }}/status">
+                    <input type="hidden" name="status" value="{{ status }}">
+                    {% if status == 'cancelled' %}
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Cancel this order?')">{{ label }}</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-sm btn-primary">{{ label }}</button>
+                    {% endif %}
+                </form>
+                {% endfor %}
+            </div>
         </div>
     </div>
 

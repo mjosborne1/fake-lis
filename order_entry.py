@@ -18,12 +18,28 @@ import hl7
 
 SUPPORTED_MESSAGES = {'ORM^O01', 'OML^O21'}
 
-# ORC-1 order control -> FHIR ServiceRequest.status
+# LIS workflow status -> actions available from it, as (new status, button label)
+STATUS_ACTIONS = {
+    'requested': [('accepted', 'Accept'), ('cancelled', 'Cancel')],
+    'accepted': [('completed', 'Complete'), ('cancelled', 'Cancel')],
+    'completed': [],
+    'cancelled': [],
+}
+
+# LIS workflow status -> FHIR ServiceRequest.status
+FHIR_STATUS = {
+    'requested': 'active',
+    'accepted': 'active',
+    'completed': 'completed',
+    'cancelled': 'revoked',
+}
+
+# ORC-1 order control -> LIS workflow status
 ORDER_CONTROL_STATUS = {
-    'NW': 'active',
-    'CA': 'revoked',
-    'OC': 'revoked',
-    'DC': 'revoked',
+    'NW': 'requested',
+    'CA': 'cancelled',
+    'OC': 'cancelled',
+    'DC': 'cancelled',
 }
 
 # OBR-27.6 / TQ1-9 priority -> FHIR ServiceRequest.priority
@@ -83,7 +99,32 @@ def ensure_schema(db):
     CREATE INDEX IF NOT EXISTS idx_sr_patient
     ON service_requests(patient_id)
     ''')
+    # Orders stored before the LIS workflow used FHIR statuses directly
+    db.execute("UPDATE service_requests SET status = 'requested' WHERE status = 'active'")
+    db.execute("UPDATE service_requests SET status = 'cancelled' WHERE status = 'revoked'")
     db.commit()
+
+
+def change_status(db, order_id, new_status):
+    """
+    Move a service request to a new workflow status, enforcing STATUS_ACTIONS.
+    Does not commit; callers own the transaction.
+    """
+    row = db.execute('''
+        SELECT placer_order_number, test_code, status FROM service_requests WHERE id = ?
+    ''', (order_id,)).fetchone()
+    if row is None:
+        raise OrderError(f'Service request {order_id} not found')
+    allowed = [status for status, _ in STATUS_ACTIONS.get(row['status'], [])]
+    if new_status not in allowed:
+        raise OrderError(
+            f"Order {row['placer_order_number']} for {row['test_code']} is {row['status']} "
+            f"and cannot be {new_status}")
+    db.execute('''
+        UPDATE service_requests
+        SET status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (new_status, order_id))
 
 
 def normalise_message(text):
@@ -261,7 +302,7 @@ def _apply_order(db, order, raw_text):
                     requester, clinical_info, authored_on,
                     sending_application, sending_facility, message_control_id, message_type,
                     raw_message
-                ) VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, 'requested', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 order['placer_order_number'], f'LIS-{uuid.uuid4().hex[:8].upper()}', order['priority'],
                 test['report_local_code'], test['report_local_display'], test['report_loinc'],
@@ -285,11 +326,7 @@ def _apply_order(db, order, raw_text):
     if row is None:
         raise OrderError(
             f"Order {order['placer_order_number']} for {test['report_local_code']} not found")
-    db.execute('''
-        UPDATE service_requests
-        SET status = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    ''', (ORDER_CONTROL_STATUS[control], row['id']))
+    change_status(db, row['id'], ORDER_CONTROL_STATUS[control])
     return row['id']
 
 
@@ -362,7 +399,7 @@ def to_fhir(row):
                 'value': row['filler_order_number'],
             },
         ],
-        'status': row['status'],
+        'status': FHIR_STATUS.get(row['status'], 'unknown'),
         'intent': 'order',
         'category': [{'coding': [{'system': 'http://snomed.info/sct', 'code': '108252007',
                                   'display': 'Laboratory procedure'}]}],
