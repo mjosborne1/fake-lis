@@ -81,7 +81,7 @@ The LIS accepts laboratory orders as HL7 v2 `ORM^O01` or `OML^O21` messages, par
 
 - `ORC-1` order control: `NW` creates an order; `CA`, `OC` and `DC` revoke one
 - `ORC-2` / `OBR-2` placer order number (required); the LIS assigns a filler number
-- `OBR-4.1` test code must match a catalogue `Report_LOCAL_Code` or `Report_LOINC`
+- `OBR-4.1` test code must match a catalogue `Report_LOCAL_Code`, `Report_LOINC` or `Report_SCT`
 - Priority comes from `TQ1-9`, `OBR-27.6` or `ORC-7.6` (`S` stat, `A` asap, `R` routine)
 - Unknown tests, duplicates and cancels of unknown orders get `MSA|AE`; unsupported messages get `MSA|AR`
 

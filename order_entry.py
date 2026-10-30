@@ -125,13 +125,13 @@ def _hl7_datetime_to_iso(value):
 
 
 def _lookup_test(db, code):
-    """Find a catalogue test by local report code or report LOINC."""
+    """Find a catalogue test by local report code, report LOINC or report SNOMED CT code."""
     return db.execute('''
         SELECT report_local_code, report_local_display, report_loinc
         FROM test_reference_ranges
-        WHERE report_local_code = ? OR report_loinc = ?
+        WHERE report_local_code = ? OR report_loinc = ? OR report_sct = ?
         LIMIT 1
-    ''', (code, code)).fetchone()
+    ''', (code, code, code)).fetchone()
 
 
 def parse_orders(db, message):
