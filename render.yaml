@@ -7,7 +7,7 @@ services:
     # Persistent disks need a paid instance type. On the free plan, remove the
     # disk block and LIS_DATABASE; the database is then rebuilt on every
     # restart and received orders are lost.
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     # One worker: SQLite and the startup database build are not multi-process safe.
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
