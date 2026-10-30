@@ -1,0 +1,35 @@
+{% if orders %}
+<table>
+    <thead>
+        <tr>
+            <th>Received</th>
+            <th>Placer #</th>
+            <th>Filler #</th>
+            <th>Patient</th>
+            <th>Test</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Requester</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr class="order-row" onclick="window.location='/orders/{{ order['id'] }}'">
+            <td>{{ order['received_at'] }}</td>
+            <td class="code-cell">{{ order['placer_order_number'] }}</td>
+            <td class="code-cell">{{ order['filler_order_number'] }}</td>
+            <td>{{ order['patient_family'] }}{% if order['patient_given'] %}, {{ order['patient_given'] }}{% endif %}
+                <div class="muted">{{ order['patient_id'] }}</div></td>
+            <td><strong>{{ order['test_code'] }}</strong> {{ order['test_display'] }}</td>
+            <td><span class="badge priority-{{ order['priority'] }}">{{ order['priority'] }}</span></td>
+            <td><span class="badge status-{{ order['status'] }}">{{ order['status'] }}</span></td>
+            <td>{{ order['requester'] or '-' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="placeholder">
+    <p>No service requests yet.</p>
+</div>
+{% endif %}

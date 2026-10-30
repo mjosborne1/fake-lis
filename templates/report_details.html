@@ -1,0 +1,66 @@
+<div class="report-container">
+    <div class="report-header">
+        <h2>{{ report['report_local_display'] }}</h2>
+        <div class="report-info">
+            <div class="info-item">
+                <span class="label">Test Code:</span>
+                <span class="value">{{ report['report_local_code'] }}</span>
+            </div>
+            {% if report['report_loinc'] %}
+            <div class="info-item">
+                <span class="label">LOINC Code:</span>
+                <span class="value">{{ report['report_loinc'] }}</span>
+            </div>
+            {% endif %}
+            {% if report['report_sct'] %}
+            <div class="info-item">
+                <span class="label">SNOMED CT:</span>
+                <span class="value">{{ report['report_sct'] }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="components-table">
+        <h3>Test Elements & Reference Intervals</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Test Name</th>
+                    <th>Unit</th>
+                    <th>Type</th>
+                    <th>DPS</th>
+                    <th>Age Range</th>
+                    <th>Reference Interval</th>
+                    <th>LOINC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for component in components %}
+                <tr>
+                    <td class="code-cell">{{ component.result_code }}</td>
+                    <td class="name-cell">{{ component.result_code_name }}</td>
+                    <td class="unit-cell">{{ component.unit_of_measure }}</td>
+                    <td class="type-cell">{{ component.result_type }}</td>
+                    <td class="dps-cell">{{ component.decimal_places }}</td>
+                    <td class="age-cell" title="{{ component.age_range_days }}">{{ component.age_range }}</td>
+                    <td class="range-cell">
+                        {% for category, range_value in component.reference_ranges %}
+                        <div class="range-item">
+                            <span class="range-category">{{ category }}:</span>
+                            <span class="range-value">{{ range_value }}</span>
+                        </div>
+                        {% endfor %}
+                    </td>
+                    <td class="loinc-cell">{{ component.result_loinc }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="record-count">
+        Total elements: {{ components|length }}
+    </div>
+</div>

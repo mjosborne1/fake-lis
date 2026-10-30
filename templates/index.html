@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Search Section -->
+    <div class="search-section">
+        <h2>Search Laboratory Tests</h2>
+        <div class="search-box">
+            <input 
+                type="text" 
+                name="search" 
+                id="search-input"
+                placeholder="Search by test code or test name..."
+                hx-get="/search"
+                hx-trigger="keyup changed delay:300ms"
+                hx-target="#search-results"
+                hx-indicator="#search-spinner"
+                hx-params="q:value"
+            >
+            <span id="search-spinner" class="htmx-indicator">🔄 Searching...</span>
+        </div>
+        
+        <div id="search-results" class="results-container">
+            <p class="help-text">Start typing to search for laboratory tests</p>
+        </div>
+    </div>
+
+    <!-- Available Tests Section -->
+    <div class="tests-section">
+        <h2>Popular Laboratory Tests</h2>
+        <div class="test-list">
+            {% for test in tests %}
+            <div class="test-card" 
+                 hx-get="/report/{{ test['report_local_code'] }}"
+                 hx-target="#report-details"
+                 hx-swap="innerHTML">
+                <div class="test-code">{{ test['report_local_code'] }}</div>
+                <div class="test-name">{{ test['report_local_display'] }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Report Details Section -->
+    <div id="report-details" class="report-details">
+        <div class="placeholder">
+            <p>👆 Click on a test above to view details</p>
+            <div hx-get="/stats" hx-trigger="load" hx-swap="innerHTML">
+                Loading statistics...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

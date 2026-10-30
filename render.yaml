@@ -1,0 +1,23 @@
+# Render Blueprint for the 50 Cent LIS.
+# HL7 v2 orders are POSTed to https://<service>.onrender.com/hl7/orders
+services:
+  - type: web
+    name: fifty-cent-lis
+    runtime: python
+    # Persistent disks need a paid instance type. On the free plan, remove the
+    # disk block and LIS_DATABASE; the database is then rebuilt on every
+    # restart and received orders are lost.
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    # One worker: SQLite and the startup database build are not multi-process safe.
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+    healthCheckPath: /orders
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.9
+      - key: LIS_DATABASE
+        value: /var/data/lis_results.db
+    disk:
+      name: lis-data
+      mountPath: /var/data
+      sizeGB: 1

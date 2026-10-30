@@ -1,0 +1,21 @@
+<div class="order-panel report-container">
+    <div class="orders-header">
+        <h3>Response</h3>
+        <span class="badge {{ 'status-active' if accepted else 'status-revoked' }}">{{ 'Accepted' if accepted else 'Rejected' }}</span>
+    </div>
+    {% if ids %}
+    <p>Service requests:
+        {% for id in ids %}<a href="/orders/{{ id }}">ServiceRequest/{{ id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    <div class="order-grid">
+        <div>
+            <h4>Sent</h4>
+            <pre class="code-block">{{ sent }}</pre>
+        </div>
+        <div>
+            <h4>ACK</h4>
+            <pre class="code-block">{{ ack }}</pre>
+        </div>
+    </div>
+</div>

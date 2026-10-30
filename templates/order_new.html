@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}New Order{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <p><a href="/orders">&larr; All service requests</a></p>
+    <h2>New Order</h2>
+
+    <div class="order-grid">
+        <form class="order-panel order-form" hx-post="/orders/new" hx-target="#ack-result">
+            <h3>Order form</h3>
+            <p class="help-text">Builds an ORM^O01 and sends it through the order entry facade.</p>
+
+            <label>Patient MRN <input name="patient_id" required value="MRN0001"></label>
+            <div class="form-row">
+                <label>Family name <input name="patient_family" value="Citizen"></label>
+                <label>Given name <input name="patient_given" value="Jane"></label>
+            </div>
+            <div class="form-row">
+                <label>Date of birth <input type="date" name="patient_dob" value="1980-01-01"></label>
+                <label>Sex
+                    <select name="patient_sex">
+                        <option value="F">Female</option>
+                        <option value="M">Male</option>
+                        <option value="O">Other</option>
+                        <option value="U">Unknown</option>
+                    </select>
+                </label>
+            </div>
+            <label>Test
+                <select name="test_code" required
+                        onchange="this.form.test_display.value = this.selectedOptions[0].dataset.display">
+                    {% for test in tests %}
+                    <option value="{{ test['report_local_code'] }}" data-display="{{ test['report_local_display'] }}">
+                        {{ test['report_local_code'] }} - {{ test['report_local_display'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="test_display" value="{{ tests[0]['report_local_display'] if tests else '' }}">
+            <div class="form-row">
+                <label>Placer order number
+                    <input name="placer_order_number" required id="placer-number">
+                </label>
+                <label>Priority
+                    <select name="priority">
+                        <option value="R">Routine</option>
+                        <option value="A">ASAP</option>
+                        <option value="S">Stat</option>
+                    </select>
+                </label>
+            </div>
+            <label>Requester (ID^Family^Given) <input name="requester" value="12345^Smith^John"></label>
+            <label>Clinical information <textarea name="clinical_info" rows="2"></textarea></label>
+            <button type="submit" class="btn btn-primary">Send order</button>
+        </form>
+
+        <form class="order-panel order-form" hx-post="/orders/new" hx-target="#ack-result">
+            <h3>Raw HL7 v2</h3>
+            <p class="help-text">Paste an ORM^O01 or OML^O21 message. Line breaks are converted to segment separators.</p>
+            <textarea name="raw_message" rows="14" class="code-block" required>MSH|^~\&|EMR|HOSP|FAKE-LIS|LAB|20261030120000||ORM^O01|MSG0001|P|2.5
+PID|1||MRN0002^^^HOSP^MR||Doe^John||19750615|M
+ORC|NW|PO-RAW-0001|||||^^^^^R||20261030120000|||12345^Smith^John
+OBR|1|PO-RAW-0001||ELF^Electrolytes and Liver Function^L|||20261030120000</textarea>
+            <button type="submit" class="btn btn-primary">Send message</button>
+        </form>
+    </div>
+
+    <div id="ack-result"></div>
+</div>
+
+<script>
+    document.getElementById('placer-number').value =
+        'PO-' + Date.now().toString(36).toUpperCase();
+</script>
+{% endblock %}

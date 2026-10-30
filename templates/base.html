@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Laboratory Information System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <h1>🔬 50 Cent LIS</h1>
+                    <p class="subtitle">For connectathon testing only</p>
+                </div>
+                <nav class="main-nav">
+                    <a href="/">Tests</a>
+                    <a href="/stats">Statistics</a>
+                    <a href="/formats">Report Formats</a>
+                    <a href="/orders">Orders</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>50 Cent LIS - Laboratory Information System Demo | Python + Flask + HTMX</p>
+        </div>
+    </footer>
+
+    <style>
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .main-nav a:hover {
+            opacity: 0.8;
+        }
+    </style>
+</body>
+</html>

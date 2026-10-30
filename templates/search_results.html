@@ -1,0 +1,18 @@
+{% if results %}
+<div class="search-results">
+    <p class="result-count">Found {{ results|length }} test(s)</p>
+    {% for result in results %}
+    <div class="search-result-item"
+         hx-get="/report/{{ result['report_local_code'] }}"
+         hx-target="#report-details"
+         hx-swap="innerHTML">
+        <span class="result-code">{{ result['report_local_code'] }}</span>
+        <span class="result-name">{{ result['report_local_display'] }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="no-results">
+    <p>No tests found matching your search.</p>
+</div>
+{% endif %}

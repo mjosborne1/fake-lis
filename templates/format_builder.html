@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Report Format Builder{% endblock %}
+
+{% block content %}
+<div class="format-builder">
+    <div class="builder-header">
+        <h1>{% if format %}Edit: {{ format['name'] }}{% else %}Create New Report Format{% endif %}</h1>
+        {% if format %}
+        <p class="format-info">Test Type: <strong>{{ format['test_type'] }}</strong></p>
+        {% endif %}
+    </div>
+
+    <div class="builder-container">
+        <!-- Left panel: Available components -->
+        <div class="available-components">
+            <h3>Available Components</h3>
+            <div class="components-search">
+                <input type="text" id="componentSearch" placeholder="Search components..." class="search-input">
+            </div>
+            <div class="components-list" id="componentsList">
+                {% for component in all_components %}
+                <div class="component-item" draggable="true" data-code="{{ component.result_code }}" data-name="{{ component.result_code_name }}">
+                    <div class="component-code">{{ component.result_code }}</div>
+                    <div class="component-name">{{ component.result_code_name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Middle panel: Format builder -->
+        <div class="format-canvas">
+            <form id="formatForm" method="POST">
+                <div class="form-group">
+                    <label>Format Name:</label>
+                    <input type="text" name="name" id="formatName" value="{{ format['name'] if format else '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Test Type:</label>
+                    <select name="test_type" id="testType" required>
+                        <option value="">-- Select Test Type --</option>
+                        {% for test_type in test_types %}
+                        <option value="{{ test_type }}" {% if format and format['test_type'] == test_type %}selected{% endif %}>
+                            {{ test_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea name="description" id="description">{{ format['description'] if format else '' }}</textarea>
+                </div>
+
+                <h3>Format Sections</h3>
+                <div id="sectionsContainer" class="sections-container">
+                    {% if format and sections %}
+                        {% for section in sections %}
+                        <div class="section-block">
+                            <div class="section-header">
+                                <input type="text" class="section-name" value="{{ section.section_name }}" 
+                                       placeholder="Section name (e.g., Full Blood Count)">
+                                <button type="button" class="btn-remove-section">×</button>
+                            </div>
+                            <div class="drop-zone">
+                                {% for item in section.section_items %}
+                                    {% if item.item_type == 'component' %}
+                                    <div class="format-item component-item-in-section" 
+                                         data-result-code="{{ item.result_code }}" draggable="true">
+                                        <span class="item-label">{{ item.result_code }}</span>
+                                        <button type="button" class="btn-remove-item">×</button>
+                                    </div>
+                                    {% elif item.item_type == 'text' %}
+                                    <div class="format-item text-item-in-section" draggable="true">
+                                        <span class="item-label">Text: {{ item.custom_text[:30] }}...</span>
+                                        <button type="button" class="btn-remove-item">×</button>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Hidden field to store serialized sections data -->
+                <input type="hidden" name="sections_data" id="sectionsData">
+
+                <button type="button" id="addSectionBtn" class="btn btn-secondary">+ Add Section</button>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Format</button>
+                    <a href="/formats" class="btn btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right panel: Preview -->
+        <div class="format-preview">
+            <h3>Preview</h3>
+            <div id="previewPane" class="preview-pane"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.format-builder {
+    padding: 20px;
+}
+
+.builder-header {
+    margin-bottom: 30px;
+}
+
+.format-info {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.builder-container {
+    display: grid;
+    grid-template-columns: 250px 1fr 300px;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.available-components {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background: #f9f9f9;
+    max-height: 600px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.components-search {
+    margin-bottom: 15px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.components-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.component-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: move;
+    transition: background 0.2s;
+}
+
+.component-item:hover {
+    background: #e8f4f8;
+}
+
+.component-code {
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #0066cc;
+}
+
+.component-name {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 3px;
+}
+
+.format-canvas {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    background: white;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.sections-container {
+    margin-bottom: 20px;
+}
+
+.section-block {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.section-header {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    background: #f0f0f0;
+}
+
+.section-name {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-remove-section {
+    padding: 5px 10px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.drop-zone {
+    min-height: 150px;
+    max-height: 400px;
+    padding: 15px;
+    background: white;
+    overflow-y: auto;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 5px;
+}
+
+.format-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin: 5px;
+    background: #e8f4f8;
+    border: 2px solid #0066cc;
+    border-radius: 4px;
+    cursor: move;
+}
+
+.component-item-in-section {
+    background: #d4e6f1;
+    border-color: #0066cc;
+}
+
+.text-item-in-section {
+    background: #fce5cd;
+    border-color: #cc5200;
+}
+
+.item-label {
+    font-weight: bold;
+}
+
+.btn-remove-item {
+    padding: 2px 6px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.format-preview {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background: #f9f9f9;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.preview-pane {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    min-height: 100px;
+    border: 1px dashed #ddd;
+}
+
+@media (max-width: 1400px) {
+    .builder-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+let draggedElement = null;
+let draggedFrom = null;
+
+// Initialize drag and drop
+document.addEventListener('DOMContentLoaded', function() {
+    setupDragAndDrop();
+    updatePreview();
+    
+    // Handle test type change to load components
+    document.getElementById('testType').addEventListener('change', loadComponentsForTestType);
+    
+    // Handle component search filter
+    document.getElementById('componentSearch').addEventListener('input', filterComponents);
+    
+    // Handle form submission
+    document.getElementById('formatForm').addEventListener('submit', serializeAndSubmit);
+    
+    // If test type is already selected (edit mode), load components for it
+    const testTypeSelect = document.getElementById('testType');
+    if (testTypeSelect.value) {
+        loadComponentsForTestType({ target: testTypeSelect });
+    }
+});
+
+function loadComponentsForTestType(e) {
+    const testType = e.target.value;
+    if (!testType) {
+        // If no test type selected, clear components list
+        document.getElementById('componentsList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/components/${encodeURIComponent(testType)}`)
+        .then(response => response.json())
+        .then(components => {
+            const componentsList = document.getElementById('componentsList');
+            componentsList.innerHTML = '';
+            
+            components.forEach(comp => {
+                const item = document.createElement('div');
+                item.className = 'component-item';
+                item.draggable = true;
+                item.dataset.code = comp.result_code;
+                item.dataset.name = comp.result_code_name;
+                item.innerHTML = `
+                    <div class="component-code">${comp.result_code}</div>
+                    <div class="component-name">${comp.result_code_name}</div>
+                `;
+                componentsList.appendChild(item);
+            });
+            
+            setupDragAndDrop();
+            document.getElementById('componentSearch').value = '';
+        })
+        .catch(error => console.error('Error loading components:', error));
+}
+
+function filterComponents(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('.available-components .component-item');
+    
+    items.forEach(item => {
+        const code = item.dataset.code.toLowerCase();
+        const name = item.dataset.name.toLowerCase();
+        
+        if (code.includes(searchTerm) || name.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function setupDragAndDrop() {
+    // Available components
+    document.querySelectorAll('.available-components .component-item').forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+    });
+
+    // Drop zones
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+    });
+
+    // Format items in sections
+    document.querySelectorAll('.format-item').forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        const removeBtn = item.querySelector('.btn-remove-item');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                item.remove();
+                updatePreview();
+            });
+        }
+    });
+    
+    // Section remove buttons
+    document.querySelectorAll('.btn-remove-section').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            btn.closest('.section-block').remove();
+            updatePreview();
+        });
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = e.target.closest('.component-item, .format-item');
+    draggedFrom = draggedElement.closest('.drop-zone') || draggedElement.closest('.available-components');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.target.closest('.drop-zone').style.background = '#e8f4f8';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    const zone = e.target.closest('.drop-zone');
+    if (!zone) return;
+
+    // Check if section already has 30 items
+    const existingItems = zone.querySelectorAll('.format-item').length;
+    if (existingItems >= 30) {
+        alert('Maximum 30 components per section reached.');
+        return;
+    }
+
+    if (draggedElement.classList.contains('component-item') && 
+        draggedElement.closest('.available-components')) {
+        // Adding new component to section
+        const code = draggedElement.dataset.code;
+        const newItem = createComponentItem(code);
+        zone.appendChild(newItem);
+    } else if (draggedElement.closest('.drop-zone')) {
+        // Moving between sections
+        zone.appendChild(draggedElement);
+    }
+
+    setupDragAndDrop();
+    updatePreview();
+    zone.style.background = '';
+}
+
+function createComponentItem(code) {
+    const item = document.createElement('div');
+    item.className = 'format-item component-item-in-section';
+    item.draggable = true;
+    item.dataset.resultCode = code;
+    item.innerHTML = `
+        <span class="item-label">${code}</span>
+        <button type="button" class="btn-remove-item">×</button>
+    `;
+    item.querySelector('.btn-remove-item').addEventListener('click', (e) => {
+        e.preventDefault();
+        item.remove();
+        updatePreview();
+    });
+    item.addEventListener('dragstart', handleDragStart);
+    return item;
+}
+
+function updatePreview() {
+    const sections = document.querySelectorAll('.section-block');
+    let preview = '<div class="preview-content">';
+
+    sections.forEach(section => {
+        const sectionName = section.querySelector('.section-name').value || 'Untitled Section';
+        const items = section.querySelectorAll('.format-item');
+
+        if (items.length > 0) {
+            preview += `<h4>${sectionName}</h4><ul>`;
+            items.forEach(item => {
+                const code = item.dataset.resultCode || 'Custom';
+                preview += `<li>${code}</li>`;
+            });
+            preview += '</ul>';
+        }
+    });
+
+    preview += '</div>';
+    document.getElementById('previewPane').innerHTML = preview;
+}
+
+document.getElementById('addSectionBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('sectionsContainer');
+    const sectionBlock = document.createElement('div');
+    sectionBlock.className = 'section-block';
+    sectionBlock.innerHTML = `
+        <div class="section-header">
+            <input type="text" class="section-name" placeholder="Section name">
+            <button type="button" class="btn-remove-section">×</button>
+        </div>
+        <div class="drop-zone"></div>
+    `;
+
+    const removeBtn = sectionBlock.querySelector('.btn-remove-section');
+    removeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        sectionBlock.remove();
+        updatePreview();
+    });
+
+    const dropZone = sectionBlock.querySelector('.drop-zone');
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('drop', handleDrop);
+
+    container.appendChild(sectionBlock);
+    setupDragAndDrop();
+    updatePreview();
+});
+
+function serializeAndSubmit(e) {
+    const sections = document.querySelectorAll('.section-block');
+    const sectionsData = [];
+    
+    sections.forEach(section => {
+        const sectionName = section.querySelector('.section-name').value;
+        const items = section.querySelectorAll('.format-item');
+        const sectionItems = [];
+        
+        items.forEach(item => {
+            if (item.dataset.resultCode) {
+                sectionItems.push({
+                    type: 'component',
+                    code: item.dataset.resultCode
+                });
+            }
+        });
+        
+        if (sectionName && sectionItems.length > 0) {
+            sectionsData.push({
+                name: sectionName,
+                items: sectionItems
+            });
+        }
+    });
+    
+    document.getElementById('sectionsData').value = JSON.stringify(sectionsData);
+}
+</script>
+{% endblock %}

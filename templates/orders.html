@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Service Requests{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <div class="orders-header">
+        <h2>Service Requests</h2>
+        <a href="/orders/new" class="btn btn-primary">+ New Order</a>
+    </div>
+
+    <form class="orders-filters"
+          hx-get="/orders/table"
+          hx-target="#orders-table"
+          hx-trigger="load, submit, input changed delay:300ms, change, every 5s">
+        <input type="search" name="q" placeholder="Search placer / filler number, MRN, surname or test code...">
+        <select name="status">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="revoked">Revoked</option>
+            <option value="completed">Completed</option>
+        </select>
+    </form>
+
+    <div id="orders-table" class="components-table"></div>
+
+    <p class="help-text">
+        HL7 v2 orders (ORM^O01, OML^O21) are accepted at <code>POST /hl7/orders</code>.
+        FHIR view: <a href="/fhir/ServiceRequest">/fhir/ServiceRequest</a>. The table refreshes every 5 seconds.
+    </p>
+</div>
+{% endblock %}

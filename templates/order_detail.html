@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}ServiceRequest/{{ order['id'] }}{% endblock %}
+
+{% block content %}
+<div class="orders-container report-container">
+    <p><a href="/orders">&larr; All service requests</a></p>
+
+    <div class="report-header">
+        <div class="orders-header">
+            <h2>{{ order['test_display'] }} <span class="muted">({{ order['test_code'] }})</span></h2>
+            <div>
+                <span class="badge priority-{{ order['priority'] }}">{{ order['priority'] }}</span>
+                <span class="badge status-{{ order['status'] }}">{{ order['status'] }}</span>
+            </div>
+        </div>
+        <div class="report-info">
+            <div class="info-item"><span class="label">Placer #:</span><span class="value">{{ order['placer_order_number'] }}</span></div>
+            <div class="info-item"><span class="label">Filler #:</span><span class="value">{{ order['filler_order_number'] }}</span></div>
+            {% if order['test_loinc'] %}
+            <div class="info-item"><span class="label">LOINC:</span><span class="value">{{ order['test_loinc'] }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="order-grid">
+        <div class="order-panel">
+            <h3>Patient</h3>
+            <dl>
+                <dt>Name</dt><dd>{{ order['patient_family'] }}{% if order['patient_given'] %}, {{ order['patient_given'] }}{% endif %}</dd>
+                <dt>MRN</dt><dd>{{ order['patient_id'] }}</dd>
+                <dt>DOB</dt><dd>{{ order['patient_dob'] or '-' }}</dd>
+                <dt>Sex</dt><dd>{{ order['patient_sex'] or '-' }}</dd>
+            </dl>
+        </div>
+        <div class="order-panel">
+            <h3>Order</h3>
+            <dl>
+                <dt>Requester</dt><dd>{{ order['requester'] or '-' }}</dd>
+                <dt>Authored</dt><dd>{{ order['authored_on'] or '-' }}</dd>
+                <dt>Clinical info</dt><dd>{{ order['clinical_info'] or '-' }}</dd>
+                <dt>Source</dt><dd>{{ order['sending_application'] }} / {{ order['sending_facility'] }}</dd>
+                <dt>Message</dt><dd>{{ order['message_type'] }} ({{ order['message_control_id'] }})</dd>
+                <dt>Received</dt><dd>{{ order['received_at'] }}</dd>
+                <dt>Updated</dt><dd>{{ order['updated_at'] }}</dd>
+            </dl>
+            {% if order['status'] == 'active' %}
+            <form method="POST" action="/orders/{{ order['id'] }}/cancel">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Cancel this order?')">Cancel order (ORC|CA)</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="order-panel">
+        <div class="orders-header">
+            <h3>FHIR ServiceRequest</h3>
+            <a href="/fhir/ServiceRequest/{{ order['id'] }}" class="btn btn-sm btn-secondary">Raw JSON</a>
+        </div>
+        <pre class="code-block">{{ fhir_json }}</pre>
+    </div>
+
+    <div class="order-panel">
+        <h3>Original HL7 v2 message</h3>
+        <pre class="code-block">{{ raw_hl7 }}</pre>
+    </div>
+</div>
+{% endblock %}

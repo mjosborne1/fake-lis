@@ -1,0 +1,25 @@
+Report_LOCAL_Code	Report_LOCAL_Display	Report_LOINC	Report_SCT	Result_Code	Result_Code_Name	UofM	Result_LOINC	DPS	Age	Low	High	Male_Low	Male_High	Female_Low	Female_High	Pregnant_Low	Pregnant_High
+CBC	Full Blood Count	58410-2	26604007	WBC	WBC	x10*9/L	6690-2	1	6574 ≤ d ≤ 43829	3.5	11						
+CBC	Full Blood Count	58410-2	26604007	RBC	RBC	x10*12/L	789-8	2	6574 ≤ d ≤ 43829			4.5	6.5	3.8	5.8		
+CBC	Full Blood Count	58410-2	26604007	HEB	Haemoglobin	g/L	718-7	0	6574 ≤ d ≤ 43829			130	180	115	165		
+CBC	Full Blood Count	58410-2	26604007	HCT	Haematocrit	%	4544-3	2	6574 ≤ d ≤ 43829			0.40	0.54	0.35	0.47		
+CBC	Full Blood Count	58410-2	26604007	MCV	MCV	fL	787-2	1	6574 ≤ d ≤ 43829	80	100						
+CBC	Full Blood Count	58410-2	26604007	MCH	MCH	pg	785-6	1	6574 ≤ d ≤ 43829	27	32						
+CBC	Full Blood Count	58410-2	26604007	MHC	MCHC	g/L	786-4	0	6574 ≤ d ≤ 43829	310	360						
+CBC	Full Blood Count	58410-2	26604007	RDW	RDW	%	788-0	0	6574 ≤ d ≤ 43829	11	15						
+CBC	Full Blood Count	58410-2	26604007	PLT	Platelets	x10*9/L	777-3	0	6574 ≤ d ≤ 43829	150	450						
+CBC	Full Blood Count	58410-2	26604007	NEP	Neutrophils	%	770-8	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	LYP	Lymphs	%	736-9	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	MOP	Monocytes	%	5905-5	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	EOP	Eos	%	713-8	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	BAP	Basos	%	706-2	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	NEA	Neutrophils (Absolute)	x10*9/L	751-8	1	6574 ≤ d ≤ 43829	2	7						
+CBC	Full Blood Count	58410-2	26604007	LYA	Lymphs (Absolute)	x10*9/L	731-0	1	6574 ≤ d ≤ 43829	1.5	4						
+CBC	Full Blood Count	58410-2	26604007	MOA	Monocytes(Absolute)	x10*9/L	742-7	1	6574 ≤ d ≤ 43829	0.1	0.8						
+CBC	Full Blood Count	58410-2	26604007	EOA	Eos (Absolute)	x10*9/L	711-2	2	6574 ≤ d ≤ 43829	0.04	0.44						
+CBC	Full Blood Count	58410-2	26604007	BAA	Baso (Absolute)	x10*9/L	704-7	1	6574 ≤ d ≤ 43829	0	0.2						
+CBC	Full Blood Count	58410-2	26604007	IGP	Immature Granulocytes	%	71695-1	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	IGA	Immature Grans (Abs)	x10*9/L	53115-2	1	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	NBC	NRBC	%	58413-6	0	6574 ≤ d ≤ 43829								
+CBC	Full Blood Count	58410-2	26604007	COM	Haematology Comments		18314-5	S									
+																	
