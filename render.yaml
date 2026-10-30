@@ -15,9 +15,4 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.9
-      - key: LIS_DATABASE
-        value: /var/data/lis_results.db
-    disk:
-      name: lis-data
-      mountPath: /var/data
-      sizeGB: 1
+
