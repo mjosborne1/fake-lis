@@ -1,0 +1,8 @@
+Report_LOCAL_Code	Report_LOCAL_Display	Report_LOINC	Report_SCT	Result_Code	Result_Code_Name	UofM	Result_LOINC	DPS	Age	Low	High	Male_Low	Male_High	Female_Low	Female_High	Pregnant_Low	Pregnant_High
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	0 ≤ d ≤ 6	0.70	15.20						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	7 ≤ d ≤ 89	0.70	11.00						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	90 ≤ d ≤ 364	0.70	8.40						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	365 ≤ d ≤ 2190	0.70	6.00						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	2191 ≤ d ≤ 4382	0.60	4.80						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	4383 ≤ d ≤ 6573	0.50	4.30						
+TSH	Thyroid Stimulating Hormone	3016-3	313440008	TSH	TSH	mIU/L	3016-3	2	6574 ≤ d ≤ 43829	0.40	4.00					0.10	3.00
