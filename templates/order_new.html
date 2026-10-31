@@ -7,6 +7,10 @@
     <p><a href="/orders">&larr; All service requests</a></p>
     <h2>New Order</h2>
 
+    <label class="token-field">Bearer token
+        <input type="password" id="order-token" autocomplete="off" placeholder="Required to send orders">
+    </label>
+
     <div class="order-grid">
         <form class="order-panel order-form" hx-post="/orders/new" hx-target="#ack-result">
             <h3>Order form</h3>
@@ -68,9 +72,33 @@ OBR|1|PO-RAW-0001||ELF^Electrolytes and Liver Function^L|||20261030120000</texta
     </div>
 
     <div id="ack-result"></div>
+
+    <dialog id="token-dialog" class="token-dialog">
+        <h3>Bearer token required</h3>
+        <p>Orders can only be sent with a valid bearer token. Contact the repo owner for a bearer token.</p>
+        <form method="dialog">
+            <button class="btn btn-primary">OK</button>
+        </form>
+    </dialog>
 </div>
 
 <script>
+    const tokenInput = document.getElementById('order-token');
+    const tokenDialog = document.getElementById('token-dialog');
+
+    document.body.addEventListener('htmx:configRequest', (e) => {
+        const token = tokenInput.value.trim();
+        if (!token) {
+            e.preventDefault();
+            tokenDialog.showModal();
+            return;
+        }
+        e.detail.headers['Authorization'] = 'Bearer ' + token;
+    });
+    document.body.addEventListener('htmx:responseError', (e) => {
+        if (e.detail.xhr.status === 401) tokenDialog.showModal();
+    });
+
     document.getElementById('placer-number').value =
         'PO-' + Date.now().toString(36).toUpperCase();
 </script>

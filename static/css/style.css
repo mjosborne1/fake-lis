@@ -543,6 +543,7 @@ footer p {
 .orders-filters input,
 .orders-filters select,
 .order-form input,
+.token-field input,
 .order-form select,
 .order-form textarea {
     padding: 0.5rem 0.75rem;
@@ -685,3 +686,26 @@ textarea.code-block {
 .btn-secondary { background: #6c757d; color: white; }
 .btn-danger { background: var(--error); color: white; }
 .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+.token-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 24rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.token-dialog {
+    max-width: 26rem;
+    border: none;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.token-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}

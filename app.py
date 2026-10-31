@@ -5,10 +5,12 @@ Uses HTMX for dynamic content loading.
 """
 
 from flask import Flask, render_template, request, jsonify, redirect, Response
+import hmac
 import os
 import sqlite3
 from pathlib import Path
 
+import credentials
 import order_entry
 from create_database import create_database
 from load_data import load_all_templates
@@ -16,6 +18,9 @@ from load_data import load_all_templates
 
 app = Flask(__name__)
 app.config['DATABASE'] = os.environ.get('LIS_DATABASE', 'lis_results.db')
+# Owner's bearer token: manages credentials and can also send orders.
+# If unset, the credentials page is locked and only issued tokens can send orders.
+app.config['ADMIN_TOKEN'] = os.environ.get('LIS_ADMIN_TOKEN', '')
 
 
 def get_db():
@@ -36,6 +41,7 @@ def init_db():
 
     db = get_db()
     order_entry.ensure_schema(db)
+    credentials.ensure_schema(db)
     db.close()
 
 
@@ -639,6 +645,27 @@ def preview_format(format_id):
 # ---------------------------------------------------------------------------
 
 HL7_MIMETYPE = 'x-application/hl7-v2+er7'
+TOKEN_REQUIRED_MESSAGE = 'A bearer token is required to send orders. Contact the repo owner for a bearer token.'
+
+
+def bearer_token():
+    scheme, _, token = request.headers.get('Authorization', '').partition(' ')
+    return token.strip() if scheme.lower() == 'bearer' else ''
+
+
+def is_admin():
+    """True if the request carries the owner's admin token."""
+    expected = app.config['ADMIN_TOKEN']
+    return bool(expected) and hmac.compare_digest(bearer_token(), expected)
+
+
+def has_order_token(db):
+    """True if the request carries the admin token or an active issued credential."""
+    return is_admin() or credentials.verify(db, bearer_token()) is not None
+
+
+def token_required_response(message=TOKEN_REQUIRED_MESSAGE):
+    return Response(message, 401, {'WWW-Authenticate': 'Bearer'}, mimetype='text/plain')
 
 
 def query_service_requests(db, statuses=None, q=None, patient=None):
@@ -667,6 +694,9 @@ def get_service_request(db, order_id):
 def hl7_order_endpoint():
     """HL7 v2 over HTTP: accept an ORM^O01 / OML^O21 body, return an ACK."""
     db = get_db()
+    if not has_order_token(db):
+        db.close()
+        return token_required_response()
     ack, _ = order_entry.process_message(db, request.get_data(as_text=True))
     db.close()
     return Response(ack, mimetype=HL7_MIMETYPE)
@@ -731,6 +761,10 @@ def change_order_status(order_id):
 def new_order():
     """Order entry form. Builds an ORM^O01 (or takes raw HL7) and submits it through the facade."""
     if request.method == 'POST':
+        db = get_db()
+        if not has_order_token(db):
+            db.close()
+            return token_required_response()
         form = request.form
         message = form.get('raw_message', '').strip()
         if not message:
@@ -747,7 +781,6 @@ def new_order():
                 requester=form.get('requester', '').strip(),
                 clinical_info=form.get('clinical_info', '').strip())
 
-        db = get_db()
         ack, ids = order_entry.process_message(db, message)
         db.close()
         return render_template('order_ack.html',
@@ -764,6 +797,56 @@ def new_order():
     ''').fetchall()
     db.close()
     return render_template('order_new.html', tests=tests)
+
+
+# ---------------------------------------------------------------------------
+# Credentials: bearer tokens issued per email address, managed with the admin token
+# ---------------------------------------------------------------------------
+
+ADMIN_REQUIRED_MESSAGE = 'The admin token is required to manage credentials. Contact the repo owner.'
+
+
+@app.route('/credentials')
+def credentials_page():
+    return render_template('credentials.html')
+
+
+@app.route('/credentials/table')
+def credentials_table():
+    """HTMX fragment: issued credentials."""
+    if not is_admin():
+        return token_required_response(ADMIN_REQUIRED_MESSAGE)
+    db = get_db()
+    rows = credentials.list_all(db)
+    db.close()
+    return render_template('credentials_table.html', credentials=rows)
+
+
+@app.route('/credentials', methods=['POST'])
+def create_credential():
+    """Issue a token for an email address and show it once."""
+    if not is_admin():
+        return token_required_response(ADMIN_REQUIRED_MESSAGE)
+    db = get_db()
+    email = request.form.get('email', '')
+    try:
+        token = credentials.create(db, email)
+    except credentials.CredentialError as e:
+        return render_template('credential_created.html', error=str(e))
+    finally:
+        db.close()
+    return (render_template('credential_created.html', email=email.strip().lower(), token=token),
+            200, {'HX-Trigger': 'credentials-changed'})
+
+
+@app.route('/credentials/<int:credential_id>/revoke', methods=['POST'])
+def revoke_credential(credential_id):
+    if not is_admin():
+        return token_required_response(ADMIN_REQUIRED_MESSAGE)
+    db = get_db()
+    credentials.revoke(db, credential_id)
+    db.close()
+    return '', 204, {'HX-Trigger': 'credentials-changed'}
 
 
 @app.route('/fhir/ServiceRequest/<int:order_id>')

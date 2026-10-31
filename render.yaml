@@ -15,4 +15,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.9
+      # Owner's admin token for the /credentials page, where per-user order
+      # tokens are issued. Render generates a random value; read it from the
+      # service's Environment tab and keep it private.
+      - key: LIS_ADMIN_TOKEN
+        generateValue: true
 

@@ -85,11 +85,28 @@ The LIS accepts laboratory orders as HL7 v2 `ORM^O01` or `OML^O21` messages, par
 - Priority comes from `TQ1-9`, `OBR-27.6` or `ORC-7.6` (`S` stat, `A` asap, `R` routine)
 - Unknown tests, duplicates and cancels of unknown orders get `MSA|AE`; unsupported messages get `MSA|AR`
 
+**Bearer token:** orders sent over HTTP (and from the `/orders/new` page) must carry
+`Authorization: Bearer <token>`. Requests without a valid token get `401 Unauthorized`, and the order page
+shows a dialog asking the user to contact the repo owner for a token. Accepted tokens are:
+
+- a token issued to the sender's email address on the **Credentials** page (`/credentials`)
+- the owner's admin token, set in the `LIS_ADMIN_TOKEN` environment variable
+
+To issue a token, start the app with `LIS_ADMIN_TOKEN` set, open `/credentials`, enter the admin token and
+then the person's email address. The token is shown once; only its SHA-256 hash is stored, in the
+`credentials` table. The page lists issued tokens with when each was last used, and revokes them. If
+`LIS_ADMIN_TOKEN` is not set, the Credentials page is locked.
+
+```bash
+export LIS_ADMIN_TOKEN=change-me   # on the server, before python app.py
+export LIS_ORDER_TOKEN=lis_...     # for send_orm.py and the curl example below
+```
+
 **Over HTTP** (served by `app.py`):
 
 ```bash
 printf 'MSH|^~\\&|EMR|HOSP|FAKE-LIS|LAB|20261030120000||ORM^O01|MSG1|P|2.5\rPID|1||MRN1||Doe^Jane||19800101|F\rORC|NW|PO-1\rOBR|1|PO-1||CBC^Full Blood Count^L' \
-  | curl -s --data-binary @- http://127.0.0.1:5000/hl7/orders | tr '\r' '\n'
+  | curl -s -H "Authorization: Bearer $LIS_ORDER_TOKEN" --data-binary @- http://127.0.0.1:5000/hl7/orders | tr '\r' '\n'
 ```
 
 **Over MLLP** (separate process, default port 2575):
@@ -106,6 +123,8 @@ python send_orm.py v2-examples/ -q                 # every message file in a dir
 python send_orm.py v2-examples/0001.orm --fresh-ids   # new MSH-10 and placer numbers, so it can be resent
 python send_orm.py v2-examples/0001.orm --mllp 127.0.0.1:2575
 ```
+
+`send_orm.py` sends the token from `--token` or `LIS_ORDER_TOKEN`. The MLLP listener does not check a token.
 
 Exits non-zero if any message is not accepted (`MSA|AA`), so it can be used in scripts.
 
@@ -133,6 +152,9 @@ python send_orm.py v2-examples/0001.orm --url https://<service>.onrender.com/hl7
   builds it from `result_templates/` on startup.
 - The blueprint puts the database on a persistent disk at `/var/data`, which needs a paid instance. On the free
   plan, drop the disk; the database is rebuilt on each restart and orders are lost.
+- The blueprint generates a random `LIS_ADMIN_TOKEN`; find it in the service's **Environment** tab and use it
+  on `/credentials` to issue tokens to people who need to send orders. Issued tokens live in the database, so
+  on the free plan they are lost whenever the database is rebuilt.
 - Render exposes HTTPS only, so orders must be sent by HTTP POST; the MLLP listener is for local use.
 
 ### 5. Run Example Queries (Optional)
@@ -247,6 +269,7 @@ fakeapp.py                  # Flask web application
 ├── example_queries.py      # Example usage and queries
 ├── query_by_age.py         # Query by patient age examples
 ├── order_entry.py          # HL7 v2 order entry facade (parse, store, ACK, FHIR mapping)
+├── credentials.py          # Bearer tokens issued per email address
 ├── mllp_listener.py        # MLLP listener for HL7 v2 orders
 ├── requirements.txt        # Python dependencies
 ├── lis_results.db          # SQLite database (created by scripts)

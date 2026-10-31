@@ -10,9 +10,12 @@ Usage:
     python send_orm.py v2-examples/                 # every *.orm / *.hl7 in the directory
     python send_orm.py v2-examples/*.orm --fresh-ids
     python send_orm.py v2-examples/0001.orm --mllp 127.0.0.1:2575
+
+HTTP requests carry a bearer token from --token or LIS_ORDER_TOKEN.
 """
 
 import argparse
+import os
 import socket
 import sys
 import urllib.error
@@ -64,9 +67,11 @@ def freshen_ids(segments):
     return result
 
 
-def send_http(message, url, timeout):
-    request = urllib.request.Request(url, data=message.encode('utf-8'), method='POST',
-                                     headers={'Content-Type': 'x-application/hl7-v2+er7'})
+def send_http(message, url, timeout, token=None):
+    headers = {'Content-Type': 'x-application/hl7-v2+er7'}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    request = urllib.request.Request(url, data=message.encode('utf-8'), method='POST', headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return response.read().decode('utf-8')
@@ -99,6 +104,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('paths', nargs='+', help='message files or directories')
     parser.add_argument('--url', default=DEFAULT_URL, help=f'HTTP endpoint (default {DEFAULT_URL})')
+    parser.add_argument('--token', default=os.environ.get('LIS_ORDER_TOKEN'),
+                        help='bearer token for the HTTP endpoint (default $LIS_ORDER_TOKEN)')
     parser.add_argument('--mllp', metavar='HOST:PORT', help='send over MLLP instead of HTTP')
     parser.add_argument('--fresh-ids', action='store_true',
                         help='rewrite MSH-10 and placer order numbers so files can be resent')
@@ -118,7 +125,7 @@ def main():
         message = '\r'.join(segments)
 
         try:
-            ack = send_mllp(message, args.mllp, args.timeout) if args.mllp else send_http(message, args.url, args.timeout)
+            ack = send_mllp(message, args.mllp, args.timeout) if args.mllp else send_http(message, args.url, args.timeout, args.token)
         except (OSError, RuntimeError) as e:
             failures += 1
             print(f'✗ {path}: {e}')

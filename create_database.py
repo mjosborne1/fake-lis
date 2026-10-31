@@ -7,6 +7,7 @@ This script creates the database schema for storing laboratory test reference ra
 import sqlite3
 from pathlib import Path
 
+import credentials
 import order_entry
 
 
@@ -138,6 +139,7 @@ def create_database(db_path='lis_results.db'):
 
     # Service requests received through the order entry facade
     order_entry.ensure_schema(conn)
+    credentials.ensure_schema(conn)
 
     print(f"Database created successfully: {db_path}")
     print(f"  - Table: test_reference_ranges")
@@ -146,6 +148,7 @@ def create_database(db_path='lis_results.db'):
     print(f"  - Tables: report_formats, report_format_sections, report_format_items")
     print(f"  - Indexes: idx_format_test_type, idx_section_format, idx_item_section")
     print(f"  - Table: service_requests")
+    print(f"  - Table: credentials")
     
     conn.close()
 
